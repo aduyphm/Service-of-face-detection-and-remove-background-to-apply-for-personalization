@@ -36,6 +36,11 @@ limitations under the License.
     top: 50%;
     position: absolute;
   }
+
+  #snapCanvas {
+    display: inline-block;
+    vertical-align: top;
+  }
 </style>
 </head>
 <body>
@@ -52,9 +57,35 @@ limitations under the License.
           ">
         </video>
       </div>
+      <button id = "snap" onclick="snap()">Snap Photo</button>
       <div id="scatter-gl-container"></div>
     </div>
+  </div>
+
+  <div id="myCanvas">
+    <canvas id="id_canvas"></canvas>
   </div>
 </body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.6/dat.gui.min.js"></script>
 <script src="index.js"></script>
+
+<script>
+  var video = document.getElementById('video');
+  var canvas = document.getElementById('id_canvas');
+  var context = canvas.getContext('2d');
+  var w, h, ratio;
+  
+  video.addEventListener('loadedmetadata', function() {
+    ratio = video.videoWidth / video.videoHeight;
+    w = video.videoWidth - 100;
+    h = parseInt(w / ratio, 10);
+    canvas.width = w;
+    canvas.height = h;			
+  }, false);
+  
+  function snap() {
+    context.fillRect(0, 0, w, h);
+    context.drawImage(video, 0, 0, w, h);
+  }
+   
+</script>
