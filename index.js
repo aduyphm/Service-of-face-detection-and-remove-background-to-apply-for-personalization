@@ -15,7 +15,8 @@ function isMobile() {
   return isAndroid || isiOS;
 }
 
-let model, ctx, videoWidth, videoHeight, video, canvas;
+let model, ctx, videoWidth, videoHeight, video, canvas, isVideo;
+const imageElement = document.getElementById('faces');
 const VIDEO_SIZE = 500;
 const mobile = isMobile();
 // Don't render the point cloud on mobile in order to maximize performance and
@@ -44,10 +45,34 @@ function setupDatGui() {
 
 }
 
+var stopbutton = document.getElementById('stop'); 
+stopbutton.onclick = function() {
+  video = document.getElementById('video');
+  const stream = video.srcObject
+  stream.getTracks().forEach(function(track) {
+    track.stop();
+  });
+  var canvas = document.getElementById("output");
+  canvas.style.display = "none";
+  alert("webcam stopped");
+  var upload = document.getElementById("upload");
+  upload.style.display = "inline";
+  var snapButton = document.getElementById("snap");
+  snapButton.style.display = "none";
+  var snapCanvas = document.getElementById("myCanvas");
+  snapCanvas.style.display = "none";
+}
+
+var startbutton = document.getElementById('start');
+startbutton.onclick = function() {
+  var canvas = document.getElementById("output");
+  canvas.style.display = "inline";
+  main();
+}
 async function setupCamera() {
   video = document.getElementById('video');
 
-  const stream = await navigator.mediaDevices.getUserMedia({
+  var stream = await navigator.mediaDevices.getUserMedia({
     'audio': false,
     'video': {
       facingMode: 'user',
@@ -90,7 +115,10 @@ const getBBox = (prediction) => {
 async function renderPrediction() {
   stats.begin();
 
-  const predictions = await model.estimateFaces(video);
+  // let inputElement = isVideo? webcamElement : imageElement;
+  let flipHorizontal = false; // isVideo;
+
+  const predictions = await model.estimateFaces(video, false, flipHorizontal);
   ctx.drawImage(
       video, 0, 0, videoWidth, videoHeight, 0, 0, canvas.width, canvas.height);
 
@@ -113,13 +141,39 @@ async function renderPrediction() {
       ctx.translate(videoWidth / 2, 50);
       ctx.scale(-1, 1);
 
-      ctx.fillStyle = 'black';
+      ctx.fillStyle = '#FF0000';
       ctx.font = "30px Arial";
       ctx.textAlign = "center";
-      let yaw = Math.round(angle['yaw'] * 180 / Math.PI);
-      let pitch = Math.round(angle['pitch'] * 180 / Math.PI);
-      let roll = Math.round(angle['roll'] * 180 / Math.PI);
-      ctx.fillText(roll, 0, 0);
+      let pitch, yaw, roll, design, text='';
+      pitch = Math.round(angle['pitch'] * 180 / Math.PI);
+      yaw = Math.round(angle['yaw'] * 180 / Math.PI);
+      roll = Math.round(angle['roll'] * 180 / Math.PI);
+      design = {'pitch': 0, 'yaw': 0, 'roll': 0};
+      // text += 'pitch: ' + String(pitch) + ' yaw: ' + String(yaw) + ' roll: ' + String(roll);
+      if (pitch > design['pitch'] + 1) {
+        text += 'nod your head';
+      }
+      else if (pitch < design['pitch'] - 1) {
+        text += 'raise your head';
+      }
+      else if (yaw > design['yaw'] + 1) {
+        text += 'turn your head right';
+      }
+      else if (yaw < design['yaw'] - 1) {
+        text += 'turn your head left';
+      }
+      else if (roll > design['roll'] + 1) {
+        text += 'roll your head to the right';
+      }
+      else if (roll < design['roll'] - 1) {
+        text += 'roll your head to the left'
+      }
+      else {
+        ctx.fillStyle = '#00FF00';
+        text += 'Successfully! Please click "Capture" button.'
+      }
+
+      ctx.fillText(text, 0, 0);
 
       ctx.restore();
     });
@@ -131,7 +185,6 @@ async function renderPrediction() {
 
 async function main() {
   await tf.setBackend(state.backend);
-  setupDatGui();
 
   stats.showPanel(0);  // 0: fps, 1: ms, 2: mb, 3+: custom
   document.getElementById('main').appendChild(stats.dom);
@@ -152,11 +205,20 @@ async function main() {
   ctx = canvas.getContext('2d');
   ctx.translate(canvas.width, 0);
   ctx.scale(-1, 1);
-  ctx.strokeStyle = 'red';
+  ctx.strokeStyle = '#FF0000';
   ctx.lineWidth = 1;
 
   model = await facemesh.load({maxFaces: state.maxFaces});
   renderPrediction();
+
+  // ADD
+  var upload = document.getElementById("upload");
+  upload.style.display = "none";
+  var snapButton = document.getElementById("snap");
+  snapButton.style.display = "inline";
+  var snapCanvas = document.getElementById("myCanvas");
+  snapCanvas.style.display = "inline";
 };
 
 main();
+setupDatGui();
