@@ -16,6 +16,8 @@ function isMobile() {
 }
 
 let model, ctx, videoWidth, videoHeight, imageElement, webcamElement, canvas, isVideo=true, isSuccess=false;
+let count = 0;
+
 const VIDEO_SIZE = 500;
 const mobile = isMobile();
 // Don't render the point cloud on mobile in order to maximize performance and
@@ -27,6 +29,18 @@ const state = {
   triangulateMesh: true,
   headPoseEstimation: true
 };
+
+window.addEventListener('load', function() {
+  document.querySelector('input[type="file"]').addEventListener('change', function() {
+    if (this.files && this.files[0]) {
+      var img = document.querySelector('img');
+      img.style.width = 500
+      img.style.height = 500
+      img.src = URL.createObjectURL(this.files[0]); // set src to blob 
+      count = 0;
+    }
+  });
+});
 
 function setupDatGui() {
   const gui = new dat.GUI();
@@ -53,6 +67,7 @@ stopbutton.onclick = function() {
     track.stop();
   });
   var canvas = document.getElementById("output");
+
   canvas.style.display = "none";
   alert("webcam stopped");
   var upload = document.getElementById("upload");
@@ -154,7 +169,7 @@ async function renderPrediction() {
       yaw = Math.round(angle['yaw'] * 180 / Math.PI);
       roll = Math.round(angle['roll'] * 180 / Math.PI);
       // text += 'pitch: ' + String(pitch) + ' yaw: ' + String(yaw) + ' roll: ' + String(roll);
-      console.log(pitch, yaw, roll);
+      //console.log(pitch, yaw, roll);
       if (pitch > design['pitch'] + 2) {
         text += 'nod your head';
       }
@@ -178,12 +193,14 @@ async function renderPrediction() {
         text += 'Successfully! Please click "Capture" button.';
         isSuccess = true;
       }
-
+      
       if (isVideo) {
         ctx.fillText(text, 0, 0);
         ctx.restore();
       }
-      else {
+      else if (!isVideo && count == 0) {
+        //console.log();
+        count = count + 1;
         if (isSuccess) {
           alert('Successfully! You can use this image.');
         }
@@ -226,7 +243,7 @@ async function main() {
 
   model = await facemesh.load({maxFaces: state.maxFaces});
   renderPrediction();
-
+  //console.log("N");
   // ADD
   var upload = document.getElementById("upload");
   upload.style.display = "none";
