@@ -44,11 +44,18 @@ limitations under the License.
 </style>
 </head>
 <body>
+  <div id="upload">
+    <input type='file' />
+    <br><img id="img" src='images/noimage.png'>
+  </div>
+
   <div id="main">
     <div class="container">
       <div class="canvas-wrapper">
         <canvas id="output"></canvas>
-        <img id="faces" src="images/front.jpg">
+        <div id="myCanvas">
+          <canvas id="id_canvas"></canvas>
+        </div>
         <video id="video" playsinline style="
           -webkit-transform: scaleX(-1);
           transform: scaleX(-1);
@@ -57,17 +64,20 @@ limitations under the License.
           height: auto;
           ">
         </video>
+
       </div>
-      <button id = "snap" onclick="snap()">Snap Photo</button>
-      <div id="scatter-gl-container"></div>
+      <button id="snap" onclick="snap()">Take Photo</button>
+      <input type="button" onclick="save()" id="btnSave" name="btnSave" value="Save the canvas to server" />
+      <button id="stop" >Stop webcam</button>
+      <button id="start">Start webcam</button>
+      <!-- <div id="scatter-gl-container"></div> -->
     </div>
   </div>
 
-  <div id="myCanvas">
-    <canvas id="id_canvas"></canvas>
-  </div>
+
 </body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.6/dat.gui.min.js"></script>
+<script type="text/javascript" src="data.json"></script>
 <script src="index.js"></script>
 
 <script>
@@ -88,5 +98,18 @@ limitations under the License.
     context.fillRect(0, 0, w, h);
     context.drawImage(video, 0, 0, w, h);
   }
-   
+
+</script>
+
+<script>
+window.addEventListener('load', function() {
+  document.querySelector('input[type="file"]').addEventListener('change', function() {
+    if (this.files && this.files[0]) {
+      var img = document.querySelector('img');
+      img.style.width = 500
+      img.style.height = 500
+      img.src = URL.createObjectURL(this.files[0]); // set src to blob url
+    }
+  });
+});
 </script>
