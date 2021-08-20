@@ -15,8 +15,9 @@ function isMobile() {
   return isAndroid || isiOS;
 }
 
-let model, ctx, videoWidth, videoHeight, video, canvas, isVideo;
-const imageElement = document.getElementById('faces');
+let model, ctx, videoWidth, videoHeight, imageElement, webcamElement, canvas, isVideo=true, isSuccess=false;
+let count = -1;
+
 const VIDEO_SIZE = 500;
 const mobile = isMobile();
 // Don't render the point cloud on mobile in order to maximize performance and
@@ -28,6 +29,21 @@ const state = {
   triangulateMesh: true,
   headPoseEstimation: true
 };
+
+window.addEventListener('load', function() {
+  document.querySelector('input[type="file"]').addEventListener('change', function() {
+    if (this.files && this.files[0]) {
+      var img = document.querySelector('img');
+      img.style.width = 500
+      img.style.height = 500
+      img.src = URL.createObjectURL(this.files[0]); // set src to blob 
+      count = 0;
+      isSuccess = false;
+      //renderPrediction();
+      //alert("RENDER PREDICTION FOR UPLOADS IMAGE");
+    }
+  });
+});
 
 function setupDatGui() {
   const gui = new dat.GUI();
@@ -47,12 +63,14 @@ function setupDatGui() {
 
 var stopbutton = document.getElementById('stop'); 
 stopbutton.onclick = function() {
-  video = document.getElementById('video');
-  const stream = video.srcObject
+  isVideo = false;
+  webcamElement = document.getElementById('video');
+  const stream = webcamElement.srcObject
   stream.getTracks().forEach(function(track) {
     track.stop();
   });
   var canvas = document.getElementById("output");
+
   canvas.style.display = "none";
   alert("webcam stopped");
   var upload = document.getElementById("upload");
@@ -61,16 +79,19 @@ stopbutton.onclick = function() {
   snapButton.style.display = "none";
   var snapCanvas = document.getElementById("myCanvas");
   snapCanvas.style.display = "none";
+  imageElement = document.getElementById('img');
+  // console.log(imageElement)
 }
 
 var startbutton = document.getElementById('start');
 startbutton.onclick = function() {
+  isVideo = true;
   var canvas = document.getElementById("output");
   canvas.style.display = "inline";
   main();
 }
 async function setupCamera() {
-  video = document.getElementById('video');
+  webcamElement = document.getElementById('video');
 
   var stream = await navigator.mediaDevices.getUserMedia({
     'audio': false,
@@ -82,11 +103,11 @@ async function setupCamera() {
       height: mobile ? undefined : VIDEO_SIZE
     },
   });
-  video.srcObject = stream;
+  webcamElement.srcObject = stream;
 
   return new Promise((resolve) => {
-    video.onloadedmetadata = () => {
-      resolve(video);
+    webcamElement.onloadedmetadata = () => {
+      resolve(webcamElement);
     };
   });
 }
@@ -115,12 +136,13 @@ const getBBox = (prediction) => {
 async function renderPrediction() {
   stats.begin();
 
-  // let inputElement = isVideo? webcamElement : imageElement;
-  let flipHorizontal = false; // isVideo;
+  let inputElement = isVideo? webcamElement : imageElement;
+  // let flipHorizontal = false;
 
-  const predictions = await model.estimateFaces(video, false, flipHorizontal);
+  const predictions = await model.estimateFaces(inputElement);
+  //console.log(predictions);
   ctx.drawImage(
-      video, 0, 0, videoWidth, videoHeight, 0, 0, canvas.width, canvas.height);
+    inputElement, 0, 0, videoWidth, videoHeight, 0, 0, canvas.width, canvas.height);
 
   // if (predictions.length > 0) {
     // predictions.forEach(prediction => {
@@ -131,7 +153,7 @@ async function renderPrediction() {
     //   ctx.stroke();
     // });
   // }
-
+  //console.log(predictions.length);
   if (predictions.length > 0) {
     predictions.forEach(prediction => {
       const angle = calculateFaceAngle(prediction.scaledMesh);
@@ -145,41 +167,58 @@ async function renderPrediction() {
       ctx.font = "30px Arial";
       ctx.textAlign = "center";
       let pitch, yaw, roll, design, text='';
+      var mydata = JSON.parse(data);
+      design = {'pitch': mydata[0].pitch, 'yaw': mydata[0].yaw, 'roll': mydata[0].roll};
       pitch = Math.round(angle['pitch'] * 180 / Math.PI);
       yaw = Math.round(angle['yaw'] * 180 / Math.PI);
       roll = Math.round(angle['roll'] * 180 / Math.PI);
-      design = {'pitch': 0, 'yaw': 0, 'roll': 0};
       // text += 'pitch: ' + String(pitch) + ' yaw: ' + String(yaw) + ' roll: ' + String(roll);
-      if (pitch > design['pitch'] + 1) {
+      console.log(pitch, yaw, roll);
+      count = count + 1;
+      if (pitch > design['pitch'] + 2) {
         text += 'nod your head';
       }
-      else if (pitch < design['pitch'] - 1) {
+      else if (pitch < design['pitch'] - 2) {
         text += 'raise your head';
       }
-      else if (yaw > design['yaw'] + 1) {
+      else if (yaw > design['yaw'] + 2) {
         text += 'turn your head right';
       }
-      else if (yaw < design['yaw'] - 1) {
+      else if (yaw < design['yaw'] - 2) {
         text += 'turn your head left';
       }
-      else if (roll > design['roll'] + 1) {
+      else if (roll > design['roll'] + 2) {
         text += 'roll your head to the right';
       }
-      else if (roll < design['roll'] - 1) {
-        text += 'roll your head to the left'
+      else if (roll < design['roll'] - 2) {
+        text += 'roll your head to the left';
       }
       else {
         ctx.fillStyle = '#00FF00';
-        text += 'Successfully! Please click "Capture" button.'
+        text += 'Successfully! Please click "Capture" button.';
+        isSuccess = true;
+      }
+      
+      if (isVideo) {
+        ctx.fillText(text, 0, 0);
+        ctx.restore();
+      }
+      else if (!isVideo && count == 10) {
+        //console.log();
+        //count = count + 1;
+        if (isSuccess) {
+          alert('Successfully! You can use this image.');
+        }
+        else {
+          alert('Warning! You should upload new image.');
+        }
       }
 
-      ctx.fillText(text, 0, 0);
-
-      ctx.restore();
     });
   }
-
+  //else if (!isVideo && count == 2) alert("Not found your face");
   stats.end();
+  //if (isVideo)
   requestAnimationFrame(renderPrediction);
 };
 
@@ -209,8 +248,9 @@ async function main() {
   ctx.lineWidth = 1;
 
   model = await facemesh.load({maxFaces: state.maxFaces});
-  renderPrediction();
 
+  renderPrediction();
+  //console.log("N");
   // ADD
   var upload = document.getElementById("upload");
   upload.style.display = "none";
