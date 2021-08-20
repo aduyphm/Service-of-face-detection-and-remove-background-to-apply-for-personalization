@@ -13,6 +13,9 @@
     "@tensorflow/tfjs-backend-webgl": "^2.1.0",
     "@tensorflow/tfjs-converter": "^2.1.0",
     "@tensorflow/tfjs-core": "^2.1.0",
+    "canvas": "^2.8.0",
+    "canvas-to-image": "^2.2.0",
+    "jquery": "^3.6.0",
     "stats.js": "^0.17.0"
   },
   "scripts": {

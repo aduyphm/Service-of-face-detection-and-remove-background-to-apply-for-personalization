@@ -15,33 +15,38 @@ limitations under the License.
 
 <head>
   <!-- Load three.js -->
-<script src="https://cdn.jsdelivr.net/npm/three@0.106.2/build/three.min.js"></script>
-<!-- Load scatter-gl.js -->
-<script src="https://cdn.jsdelivr.net/npm/scatter-gl@0.0.1/lib/scatter-gl.min.js"></script>
-<style>
-  .canvas-wrapper, #scatter-gl-container {
-    display: inline-block;
-    vertical-align: top;
-  }
+  <script src="https://cdn.jsdelivr.net/npm/three@0.106.2/build/three.min.js"></script>
+  <!-- Load scatter-gl.js -->
+  <script src="https://cdn.jsdelivr.net/npm/scatter-gl@0.0.1/lib/scatter-gl.min.js"></script>
+  <!-- Bootstrap core JavaScript -->
+  <script src="public/vendor/jquery/jquery.min.js"></script>
+  <script src="public/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="script.js"></script>
+  <script src="public/vendor/toastr/js/toastr.min.js"></script>
+  <style>
+    .canvas-wrapper, #scatter-gl-container {
+      display: inline-block;
+      vertical-align: top;
+    }
 
-  #scatter-gl-container {
-    border: solid 1px black;
-    position: relative;
-  }
+    #scatter-gl-container {
+      border: solid 1px black;
+      position: relative;
+    }
 
-  /* center the canvas within its wrapper */
-  #scatter-gl-container canvas {
-    transform: translate3d(-50%, -50%, 0);
-    left: 50%;
-    top: 50%;
-    position: absolute;
-  }
+    /* center the canvas within its wrapper */
+    #scatter-gl-container canvas {
+      transform: translate3d(-50%, -50%, 0);
+      left: 50%;
+      top: 50%;
+      position: absolute;
+    }
 
-  #snapCanvas {
-    display: inline-block;
-    vertical-align: top;
-  }
-</style>
+    #snapCanvas {
+      display: inline-block;
+      vertical-align: top;
+    }
+  </style>
 </head>
 <body>
   <div id="upload">
@@ -67,15 +72,17 @@ limitations under the License.
 
       </div>
       <button id="snap" onclick="snap()">Take Photo</button>
-      <input type="button" onclick="save()" id="btnSave" name="btnSave" value="Save the canvas to server" />
+      <!-- <input type="button" onclick="save()" id="btnSave" name="btnSave" value="Save the canvas to server" /> -->
       <button id="stop" >Stop webcam</button>
       <button id="start">Start webcam</button>
       <!-- <div id="scatter-gl-container"></div> -->
+      <button id="btn_submit">Submit</button>
+      </div>
     </div>
   </div>
 
-
 </body>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.6/dat.gui.min.js"></script>
 <script type="text/javascript" src="data.json"></script>
 <script src="index.js"></script>
@@ -101,7 +108,7 @@ limitations under the License.
 
 </script>
 
-<script>
+<!-- <script>
 window.addEventListener('load', function() {
   document.querySelector('input[type="file"]').addEventListener('change', function() {
     if (this.files && this.files[0]) {
@@ -112,4 +119,4 @@ window.addEventListener('load', function() {
     }
   });
 });
-</script>
+</script> -->
