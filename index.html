@@ -46,14 +46,13 @@ limitations under the License.
 <body>
   <div id="upload">
     <input type='file' />
-    <br><img id="img">
+    <br><img id="img" src='images/noimage.png'>
   </div>
 
   <div id="main">
     <div class="container">
       <div class="canvas-wrapper">
         <canvas id="output"></canvas>
-        <img id="faces" src="images/front.jpg">
         <div id="myCanvas">
           <canvas id="id_canvas"></canvas>
         </div>
@@ -67,19 +66,19 @@ limitations under the License.
         </video>
 
       </div>
-      <button id = "snap" onclick="snap()">Snap Photo</button>
+      <button id="snap" onclick="snap()">Take Photo</button>
       <input type="button" onclick="save()" id="btnSave" name="btnSave" value="Save the canvas to server" />
       <button id="stop" >Stop webcam</button>
       <button id="start">Start webcam</button>
-      <div id="scatter-gl-container"></div>
+      <!-- <div id="scatter-gl-container"></div> -->
     </div>
   </div>
 
 
 </body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.6/dat.gui.min.js"></script>
+<script type="text/javascript" src="data.json"></script>
 <script src="index.js"></script>
-
 
 <script>
   var video = document.getElementById('video');
@@ -100,21 +99,18 @@ limitations under the License.
     context.drawImage(video, 0, 0, w, h);
   }
 
-  function save() {
-
-  }
-
 </script>
 
-<script>
+<!-- <script>
 window.addEventListener('load', function() {
   document.querySelector('input[type="file"]').addEventListener('change', function() {
-      if (this.files && this.files[0]) {
-          var img = document.querySelector('img');
-          img.style.width = 500
-          img.style.height = 500
-          img.src = URL.createObjectURL(this.files[0]); // set src to blob url
-      }
+    if (this.files && this.files[0]) {
+      var img = document.querySelector('img');
+      img.style.width = 500
+      img.style.height = 500
+      img.src = URL.createObjectURL(this.files[0]); // set src to blob 
+      
+    }
   });
 });
-</script>
+</script> -->
