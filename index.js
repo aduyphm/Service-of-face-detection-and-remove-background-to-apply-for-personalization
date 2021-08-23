@@ -15,7 +15,9 @@ function isMobile() {
   return isAndroid || isiOS;
 }
 
-let model, ctx, videoWidth, videoHeight, video, canvas;
+let model, ctx, videoWidth, videoHeight, imageElement, webcamElement, canvas, isVideo=true, isSuccess=false;
+let count = 0;
+
 const VIDEO_SIZE = 500;
 const mobile = isMobile();
 // Don't render the point cloud on mobile in order to maximize performance and
@@ -27,6 +29,18 @@ const state = {
   triangulateMesh: true,
   headPoseEstimation: true
 };
+
+window.addEventListener('load', function() {
+  document.querySelector('input[type="file"]').addEventListener('change', function() {
+    if (this.files && this.files[0]) {
+      var img = document.querySelector('img');
+      img.style.width = 500
+      img.style.height = 500
+      img.src = URL.createObjectURL(this.files[0]); // set src to blob 
+      count = 0;
+    }
+  });
+});
 
 function setupDatGui() {
   const gui = new dat.GUI();
@@ -44,10 +58,39 @@ function setupDatGui() {
 
 }
 
-async function setupCamera() {
-  video = document.getElementById('video');
+var stopbutton = document.getElementById('stop'); 
+stopbutton.onclick = function() {
+  isVideo = false;
+  webcamElement = document.getElementById('video');
+  const stream = webcamElement.srcObject
+  stream.getTracks().forEach(function(track) {
+    track.stop();
+  });
+  var canvas = document.getElementById("output");
 
-  const stream = await navigator.mediaDevices.getUserMedia({
+  canvas.style.display = "none";
+  alert("webcam stopped");
+  var upload = document.getElementById("upload");
+  upload.style.display = "inline";
+  var snapButton = document.getElementById("snap");
+  snapButton.style.display = "none";
+  var snapCanvas = document.getElementById("myCanvas");
+  snapCanvas.style.display = "none";
+  imageElement = document.getElementById('img');
+  // console.log(imageElement)
+}
+
+var startbutton = document.getElementById('start');
+startbutton.onclick = function() {
+  isVideo = true;
+  var canvas = document.getElementById("output");
+  canvas.style.display = "inline";
+  main();
+}
+async function setupCamera() {
+  webcamElement = document.getElementById('video');
+
+  var stream = await navigator.mediaDevices.getUserMedia({
     'audio': false,
     'video': {
       facingMode: 'user',
@@ -57,11 +100,11 @@ async function setupCamera() {
       height: mobile ? undefined : VIDEO_SIZE
     },
   });
-  video.srcObject = stream;
+  webcamElement.srcObject = stream;
 
   return new Promise((resolve) => {
-    video.onloadedmetadata = () => {
-      resolve(video);
+    webcamElement.onloadedmetadata = () => {
+      resolve(webcamElement);
     };
   });
 }
@@ -90,9 +133,12 @@ const getBBox = (prediction) => {
 async function renderPrediction() {
   stats.begin();
 
-  const predictions = await model.estimateFaces(video);
+  let inputElement = isVideo? webcamElement : imageElement;
+  // let flipHorizontal = false;
+
+  const predictions = await model.estimateFaces(inputElement);
   ctx.drawImage(
-      video, 0, 0, videoWidth, videoHeight, 0, 0, canvas.width, canvas.height);
+    inputElement, 0, 0, videoWidth, videoHeight, 0, 0, canvas.width, canvas.height);
 
   // if (predictions.length > 0) {
     // predictions.forEach(prediction => {
@@ -113,15 +159,56 @@ async function renderPrediction() {
       ctx.translate(videoWidth / 2, 50);
       ctx.scale(-1, 1);
 
-      ctx.fillStyle = 'black';
+      ctx.fillStyle = '#FF0000';
       ctx.font = "30px Arial";
       ctx.textAlign = "center";
-      let yaw = Math.round(angle['yaw'] * 180 / Math.PI);
-      let pitch = Math.round(angle['pitch'] * 180 / Math.PI);
-      let roll = Math.round(angle['roll'] * 180 / Math.PI);
-      ctx.fillText(roll, 0, 0);
+      let pitch, yaw, roll, design, text='';
+      var mydata = JSON.parse(data);
+      design = {'pitch': mydata[0].pitch, 'yaw': mydata[0].yaw, 'roll': mydata[0].roll};
+      pitch = Math.round(angle['pitch'] * 180 / Math.PI);
+      yaw = Math.round(angle['yaw'] * 180 / Math.PI);
+      roll = Math.round(angle['roll'] * 180 / Math.PI);
+      // text += 'pitch: ' + String(pitch) + ' yaw: ' + String(yaw) + ' roll: ' + String(roll);
+      //console.log(pitch, yaw, roll);
+      if (pitch > design['pitch'] + 2) {
+        text += 'nod your head';
+      }
+      else if (pitch < design['pitch'] - 2) {
+        text += 'raise your head';
+      }
+      else if (yaw > design['yaw'] + 2) {
+        text += 'turn your head right';
+      }
+      else if (yaw < design['yaw'] - 2) {
+        text += 'turn your head left';
+      }
+      else if (roll > design['roll'] + 2) {
+        text += 'roll your head to the right';
+      }
+      else if (roll < design['roll'] - 2) {
+        text += 'roll your head to the left';
+      }
+      else {
+        ctx.fillStyle = '#00FF00';
+        text += 'Successfully! Please click "Capture" button.';
+        isSuccess = true;
+      }
+      
+      if (isVideo) {
+        ctx.fillText(text, 0, 0);
+        ctx.restore();
+      }
+      else if (!isVideo && count == 0) {
+        //console.log();
+        count = count + 1;
+        if (isSuccess) {
+          alert('Successfully! You can use this image.');
+        }
+        else {
+          alert('Warning! You should upload new image.');
+        }
+      }
 
-      ctx.restore();
     });
   }
 
@@ -131,7 +218,6 @@ async function renderPrediction() {
 
 async function main() {
   await tf.setBackend(state.backend);
-  setupDatGui();
 
   stats.showPanel(0);  // 0: fps, 1: ms, 2: mb, 3+: custom
   document.getElementById('main').appendChild(stats.dom);
@@ -152,11 +238,20 @@ async function main() {
   ctx = canvas.getContext('2d');
   ctx.translate(canvas.width, 0);
   ctx.scale(-1, 1);
-  ctx.strokeStyle = 'red';
+  ctx.strokeStyle = '#FF0000';
   ctx.lineWidth = 1;
 
   model = await facemesh.load({maxFaces: state.maxFaces});
   renderPrediction();
+  //console.log("N");
+  // ADD
+  var upload = document.getElementById("upload");
+  upload.style.display = "none";
+  var snapButton = document.getElementById("snap");
+  snapButton.style.display = "inline";
+  var snapCanvas = document.getElementById("myCanvas");
+  snapCanvas.style.display = "inline";
 };
 
 main();
+setupDatGui();
