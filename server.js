@@ -2,7 +2,8 @@ var Express = require('express');
 var multer = require('multer');
 var bodyParser = require('body-parser');
 var app = Express();
-app.use(bodyParser.json());
+const path = require('path');
+
 console.log("I am a server.");
 var Storage = multer.diskStorage({
     destination: function(req, file, callback) {
@@ -17,9 +18,14 @@ var upload = multer({
     storage: Storage
 }).array("imgUploader", 3); // Field name and max count 
 
+app.use(bodyParser.json());
+app.use(Express.static(path.join(__dirname,'dist')));
+app.use(Express.static(path.join(__dirname,'images')));
+
+
 app.get("/", function(req, res) {
     //res.send("Welcome to my server !!!");
-    res.sendFile(__dirname + "/public/index.html");
+    res.sendFile(path.join(__dirname , "dist/index.html"));
 });
                 
 app.post("/api/Upload", function(req, res) {
@@ -35,6 +41,5 @@ app.listen(1234, function(a) {
     console.log("Listening to port 1234");
 })
 
-app.use(Express.static('public'));
-//app.use(Express.static('node_modules'));
+
 //app.use("/", Express.static('./'));

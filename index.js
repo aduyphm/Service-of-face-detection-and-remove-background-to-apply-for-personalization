@@ -5,7 +5,6 @@ import '@tensorflow/tfjs-backend-webgl';
 import { drawMesh, calculateFaceAngle } from "./utilities";
 
 import * as tfjsWasm from '@tensorflow/tfjs-backend-wasm';
-
 tfjsWasm.setWasmPath(
     `https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm@${tfjsWasm.version_wasm}/dist/tfjs-backend-wasm.wasm`);
 
@@ -16,7 +15,7 @@ function isMobile() {
 }
 
 let model, ctx, videoWidth, videoHeight, imageElement, webcamElement, canvas, isVideo=true, isSuccess=false;
-let count = 0;
+let count = -1;
 
 const VIDEO_SIZE = 500;
 const mobile = isMobile();
@@ -38,6 +37,9 @@ window.addEventListener('load', function() {
       img.style.height = 500
       img.src = URL.createObjectURL(this.files[0]); // set src to blob 
       count = 0;
+      isSuccess = false;
+      //renderPrediction();
+      //alert("RENDER PREDICTION FOR UPLOADS IMAGE");
     }
   });
 });
@@ -137,6 +139,7 @@ async function renderPrediction() {
   // let flipHorizontal = false;
 
   const predictions = await model.estimateFaces(inputElement);
+  //console.log(predictions);
   ctx.drawImage(
     inputElement, 0, 0, videoWidth, videoHeight, 0, 0, canvas.width, canvas.height);
 
@@ -149,7 +152,7 @@ async function renderPrediction() {
     //   ctx.stroke();
     // });
   // }
-
+  //console.log(predictions.length);
   if (predictions.length > 0) {
     predictions.forEach(prediction => {
       const angle = calculateFaceAngle(prediction.scaledMesh);
@@ -170,6 +173,7 @@ async function renderPrediction() {
       roll = Math.round(angle['roll'] * 180 / Math.PI);
       // text += 'pitch: ' + String(pitch) + ' yaw: ' + String(yaw) + ' roll: ' + String(roll);
       //console.log(pitch, yaw, roll);
+      count = count + 1;
       if (pitch > design['pitch'] + 2) {
         text += 'nod your head';
       }
@@ -198,9 +202,9 @@ async function renderPrediction() {
         ctx.fillText(text, 0, 0);
         ctx.restore();
       }
-      else if (!isVideo && count == 0) {
+      else if (!isVideo && count == 10) {
         //console.log();
-        count = count + 1;
+        //count = count + 1;
         if (isSuccess) {
           alert('Successfully! You can use this image.');
         }
@@ -211,8 +215,9 @@ async function renderPrediction() {
 
     });
   }
-
+  //else if (!isVideo && count == 2) alert("Not found your face");
   stats.end();
+  //if (isVideo)
   requestAnimationFrame(renderPrediction);
 };
 
@@ -242,6 +247,7 @@ async function main() {
   ctx.lineWidth = 1;
 
   model = await facemesh.load({maxFaces: state.maxFaces});
+
   renderPrediction();
   //console.log("N");
   // ADD
@@ -255,3 +261,4 @@ async function main() {
 
 main();
 setupDatGui();
+
